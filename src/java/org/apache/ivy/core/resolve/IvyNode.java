@@ -399,18 +399,13 @@ public class IvyNode implements Comparable {
     Boolean doesExclude(ModuleDescriptor md, String rootModuleConf, String[] moduleConfs,
             DependencyDescriptor dd, Artifact artifact, Stack callersStack) {
         // artifact is excluded if it match any of the exclude pattern for this dependency...
-        if (dd != null) {
-            if (dd.doesExclude(moduleConfs, artifact.getId().getArtifactId())) {
-                return Boolean.TRUE;
-            }
-        }
-        if (md.doesExclude(moduleConfs, artifact.getId().getArtifactId())) {
+        if (directlyExcludes(md, moduleConfs, dd, artifact)) {
             return Boolean.TRUE;
         }
         // ... or if it is excluded by all its callers
         IvyNode c = getData().getNode(md.getModuleRevisionId());
         if (c != null) {
-            if (callersStack.contains(c.getId())) {
+            if (callersStack.contains(c)) {
                 // a circular dependency, we cannot be conclusive here
                 return null;
             }
@@ -418,6 +413,19 @@ public class IvyNode implements Comparable {
         } else {
             return Boolean.FALSE;
         }
+    }
+
+    public boolean directlyExcludes(ModuleDescriptor md, String[] moduleConfs,
+            DependencyDescriptor dd, Artifact artifact) {
+        if (dd != null) {
+            if (dd.doesExclude(moduleConfs, artifact.getId().getArtifactId())) {
+                return true;
+            }
+        }
+        if (md.doesExclude(moduleConfs, artifact.getId().getArtifactId())) {
+            return true;
+        }
+        return false;
     }
 
     public boolean hasConfigurationsToLoad() {

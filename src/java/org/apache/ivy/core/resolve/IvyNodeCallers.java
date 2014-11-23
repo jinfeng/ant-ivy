@@ -17,17 +17,20 @@
  */
 package org.apache.ivy.core.resolve;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
 import org.apache.ivy.core.module.descriptor.Artifact;
 import org.apache.ivy.core.module.descriptor.Configuration;
+import org.apache.ivy.core.module.descriptor.DefaultArtifact;
 import org.apache.ivy.core.module.descriptor.DependencyDescriptor;
 import org.apache.ivy.core.module.descriptor.ModuleDescriptor;
 import org.apache.ivy.core.module.id.ModuleId;
@@ -108,7 +111,7 @@ public class IvyNodeCallers {
             return mrid.toString();
         }
 
-        public ModuleRevisionId getAskedDependencyId(ResolveData resolveData) {
+        public ModuleRevisionId getAskedDependencyId() {
             return dd.getDependencyRevisionId();
         }
 
@@ -202,6 +205,21 @@ public class IvyNodeCallers {
         return (Caller[]) callers.values().toArray(new Caller[callers.values().size()]);
     }
 
+    private Caller[] getCallersByMrid(String rootModuleConf, ModuleRevisionId mrid) {
+        Map<ModuleRevisionId, Caller> callers = (Map) callersByRootConf.get(rootModuleConf);
+        if (callers == null) {
+            return new Caller[0];
+        }
+
+        List mridCallers = new ArrayList();
+        for (Caller caller : callers.values()) {
+            if (caller.getAskedDependencyId().equals(mrid)) {
+                mridCallers.add(caller);
+            }
+        }
+        return (Caller[]) mridCallers.toArray(new Caller[mridCallers.size()]);
+    }
+
     public Caller[] getAllCallers() {
         Set all = new HashSet();
         for (Iterator iter = callersByRootConf.values().iterator(); iter.hasNext();) {
@@ -265,14 +283,31 @@ public class IvyNodeCallers {
     }
 
     boolean doesCallersExclude(String rootModuleConf, Artifact artifact, Stack callersStack) {
-        callersStack.push(node.getId());
+        /* The caller stack is, from bottom to top, the path from the
+         * artifact we're considering excluding up towards the
+         * root. */
+        callersStack.push(node);
         try {
-            Caller[] callers = getCallers(rootModuleConf);
+            Caller[] callers = getCallersByMrid(rootModuleConf, node.getId());
             if (callers.length == 0) {
                 return false;
             }
             boolean allUnconclusive = true;
-            for (int i = 0; i < callers.length; i++) {
+            callers: for (int i = 0; i < callers.length; i++) {
+                /* Each ancestor of this artifact (called "descendant", here, since it's
+                   a descendant relative to this.node) might itself have been excluded by
+                   an older ancestor (this.node); if it is, then it is as if artifact
+                   itself were excluded in this path. */
+                String[] moduleConfs = new String[] {rootModuleConf};
+                for (IvyNode descendant : (Stack<IvyNode>) callersStack) {
+                    Artifact a = DefaultArtifact.newIvyArtifact(descendant.getId(), null);
+                    DependencyDescriptor dd = callers[i].getDependencyDescriptor();
+                    if (node.directlyExcludes(node.getDescriptor(), moduleConfs, dd, a)) {
+                        allUnconclusive = false;
+                        continue callers;
+                    }
+                }
+
                 if (!callers[i].canExclude()) {
                     return false;
                 }

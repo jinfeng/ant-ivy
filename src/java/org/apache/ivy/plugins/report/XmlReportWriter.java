@@ -250,7 +250,7 @@ public class XmlReportWriter {
                     + XMLHelper.escape(toString(callers[i].getCallerConfigurations()))
                     + "\""
                     + " rev=\""
-                    + XMLHelper.escape(callers[i].getAskedDependencyId(dep.getData()).getRevision())
+                    + XMLHelper.escape(callers[i].getAskedDependencyId().getRevision())
                     + "\""
                     + " rev-constraint-default=\""
                     + XMLHelper.escape(callers[i].getDependencyDescriptor()
