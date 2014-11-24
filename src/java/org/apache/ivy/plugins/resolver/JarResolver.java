@@ -35,6 +35,7 @@ import org.apache.ivy.plugins.repository.url.URLResource;
 public class JarResolver extends RepositoryResolver {
 
     private URL url;
+    private boolean anotherFlag = false;
 
     public JarResolver() {
         setRepository(new JarRepository());
@@ -81,6 +82,9 @@ public class JarResolver extends RepositoryResolver {
             try {
                 if (eventManager != null) {
                     getRepository().addTransferListener(eventManager);
+                }
+                if (anotherFlag) {
+                  return;
                 }
                 Resource jarResource = new URLResource(url);
                 CacheResourceOptions options = new CacheResourceOptions();
