@@ -65,12 +65,7 @@ public class BasicURLHandler extends AbstractURLHandler {
         URLConnection con = null;
         try {
             url = normalizeToURL(url);
-            con = url.openConnection();
-            con.setRequestProperty("User-Agent", getUserAgent());
-            if (timeout != 0) {
-                con.setConnectTimeout(timeout);
-                con.setReadTimeout(timeout);
-            }
+            con = openConnection(url, timeout);
             if (con instanceof HttpURLConnection) {
                 HttpURLConnection httpCon = (HttpURLConnection) con;
                 if (getRequestMethod() == URLHandler.REQUEST_METHOD_HEAD) {
@@ -164,8 +159,7 @@ public class BasicURLHandler extends AbstractURLHandler {
         URLConnection conn = null;
         try {
             url = normalizeToURL(url);
-            conn = url.openConnection();
-            conn.setRequestProperty("User-Agent", getUserAgent());
+            conn = openConnection(url);
             conn.setRequestProperty("Accept-Encoding", "gzip,deflate");
             if (conn instanceof HttpURLConnection) {
                 HttpURLConnection httpCon = (HttpURLConnection) conn;
@@ -198,8 +192,7 @@ public class BasicURLHandler extends AbstractURLHandler {
         URLConnection srcConn = null;
         try {
             src = normalizeToURL(src);
-            srcConn = src.openConnection();
-            srcConn.setRequestProperty("User-Agent", getUserAgent());
+            srcConn = openConnection(src);
             srcConn.setRequestProperty("Accept-Encoding", "gzip,deflate");
             if (srcConn instanceof HttpURLConnection) {
                 HttpURLConnection httpCon = (HttpURLConnection) srcConn;
@@ -247,10 +240,9 @@ public class BasicURLHandler extends AbstractURLHandler {
         HttpURLConnection conn = null;
         try {
             dest = normalizeToURL(dest);
-            conn = (HttpURLConnection) dest.openConnection();
+            conn = (HttpURLConnection) openConnection(dest);
             conn.setDoOutput(true);
             conn.setRequestMethod("PUT");
-            conn.setRequestProperty("User-Agent", getUserAgent());
             conn.setRequestProperty("Content-type", "application/octet-stream");
             conn.setRequestProperty("Content-length", Long.toString(source.length()));
             conn.setInstanceFollowRedirects(true);
@@ -340,5 +332,19 @@ public class BasicURLHandler extends AbstractURLHandler {
 
     public void setTimeout(int defaultTimeout) {
         this.defaultTimeout = defaultTimeout;
+    }
+
+    protected URLConnection openConnection(URL url) throws IOException {
+        return openConnection(url, defaultTimeout);
+    }
+
+    protected URLConnection openConnection(URL url, int timeout) throws IOException{
+        URLConnection con = url.openConnection();
+        if (timeout != 0) {
+            con.setConnectTimeout(timeout);
+            con.setReadTimeout(timeout);
+        }
+        con.setRequestProperty("User-Agent", getUserAgent());
+        return con;
     }
 }
