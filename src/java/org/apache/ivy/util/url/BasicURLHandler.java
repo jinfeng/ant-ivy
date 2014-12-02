@@ -50,8 +50,10 @@ public class BasicURLHandler extends AbstractURLHandler {
         }
     }
 
+    private int defaultTimeout = 0;
+
     public URLInfo getURLInfo(URL url) {
-        return getURLInfo(url, 0);
+        return getURLInfo(url, defaultTimeout);
     }
 
     public URLInfo getURLInfo(URL url, int timeout) {
@@ -65,6 +67,10 @@ public class BasicURLHandler extends AbstractURLHandler {
             url = normalizeToURL(url);
             con = url.openConnection();
             con.setRequestProperty("User-Agent", getUserAgent());
+            if (timeout != 0) {
+                con.setConnectTimeout(timeout);
+                con.setReadTimeout(timeout);
+            }
             if (con instanceof HttpURLConnection) {
                 HttpURLConnection httpCon = (HttpURLConnection) con;
                 if (getRequestMethod() == URLHandler.REQUEST_METHOD_HEAD) {
@@ -326,5 +332,13 @@ public class BasicURLHandler extends AbstractURLHandler {
                 }
             }
         }
+    }
+
+    public int getTimeout() {
+        return defaultTimeout;
+    }
+
+    public void setTimeout(int defaultTimeout) {
+        this.defaultTimeout = defaultTimeout;
     }
 }

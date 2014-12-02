@@ -70,4 +70,7 @@ public final class URLHandlerRegistry {
         }
     }
 
+    public static void setTimeout(int timeout) {
+        defaultHandler.setTimeout(timeout);
+    }
 }
