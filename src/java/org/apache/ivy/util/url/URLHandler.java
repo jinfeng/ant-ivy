@@ -170,4 +170,6 @@ public interface URLHandler {
     public void upload(File src, URL dest, CopyProgressListener l) throws IOException;
 
     public void setRequestMethod(int requestMethod);
+
+    public void setTimeout(int timeout);
 }
